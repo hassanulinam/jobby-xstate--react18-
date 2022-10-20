@@ -29,7 +29,7 @@ const Login = () => {
 
   const onLogin = (e: any) => {
     e.preventDefault();
-    send({ type: "SUBMIT", value: { username, password } });
+    send({ type: "SUBMIT", formData: { username, password } });
   };
 
   const renderForm = () => (

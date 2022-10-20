@@ -25,7 +25,7 @@ interface authMachineContext {
 
 type authMachineEvent = {
   type: "SUBMIT";
-  value: { username: string; password: string };
+  formData: { username: string; password: string };
 };
 
 export const authMachine = createMachine<authMachineContext, authMachineEvent>({
@@ -41,7 +41,7 @@ export const authMachine = createMachine<authMachineContext, authMachineEvent>({
         SUBMIT: {
           target: "submittingForm",
           actions: assign({
-            formData: (_, event: any) => JSON.stringify(event.value),
+            formData: (_, event: any) => JSON.stringify(event.formData),
           }),
         },
       },

@@ -11,9 +11,12 @@ import "./index.css";
 import FailureView from "../../components/FailureView";
 import Header from "../../components/Header";
 import JobItem from "../../components/JobItem";
+import { useMachine } from "@xstate/react";
+import { jobsMachine } from "../../xstate-machines/jobsMachine";
 
 const Jobs = () => {
   const { jobStore } = useStores();
+  const [jobsState, send] = useMachine(jobsMachine);
 
   useEffect(() => {
     jobStore.getProfileData();
