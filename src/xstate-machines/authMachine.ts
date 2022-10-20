@@ -58,8 +58,19 @@ export const authMachine = createMachine<authMachineContext, authMachineEvent>({
           },
         },
         onError: {
-          target: "idle",
+          target: "loginFailure",
           actions: assign({ error: (_ctx, error) => error.data.message }),
+        },
+      },
+    },
+
+    loginFailure: {
+      on: {
+        SUBMIT: {
+          target: "submittingForm",
+          actions: assign({
+            formData: (_, event: any) => JSON.stringify(event.value),
+          }),
         },
       },
     },
