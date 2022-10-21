@@ -1,19 +1,20 @@
 import { BsBriefcaseFill, BsStarFill } from "react-icons/bs";
 import { MdLocationOn } from "react-icons/md";
 import { useHistory } from "react-router-dom";
+import { JobType } from "../../stores/Models/Job/types";
 
 import "./index.css";
 
-const JobItem = ({ details }: any) => {
+const JobItem = ({ details }: { details: JobType }) => {
   const {
     id,
-    companyLogoUrl,
+    company_logo_url,
     title,
     rating,
     location,
-    employmentType,
-    packagePerAnnum,
-    jobDescription,
+    employment_type,
+    package_per_annum,
+    job_description,
   } = details;
   const history = useHistory();
 
@@ -27,7 +28,7 @@ const JobItem = ({ details }: any) => {
         <div className="flex-row">
           <img
             alt="company logo"
-            src={companyLogoUrl}
+            src={company_logo_url}
             className="company-logo-img"
           />
           <div>
@@ -46,17 +47,17 @@ const JobItem = ({ details }: any) => {
             </div>
             <div className="flex-row">
               <BsBriefcaseFill color="#ffffff" size="20" />
-              <p className="ml-1">{employmentType}</p>
+              <p className="ml-1">{employment_type}</p>
             </div>
           </div>
           <div>
-            <p className="job-title">{packagePerAnnum}</p>
+            <p className="job-title">{package_per_annum}</p>
           </div>
         </div>
         <hr />
         <div className="job-desc">
           <h1 className="job-desc-heading">Description</h1>
-          <p className="line-gap">{jobDescription}</p>
+          <p className="line-gap">{job_description}</p>
         </div>
       </div>
     </li>

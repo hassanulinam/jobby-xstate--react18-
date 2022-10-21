@@ -1,41 +1,23 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { ThreeDots } from "react-loader-spinner";
-import { useStores } from "../../hooks/useStores";
 import { employmentTypes, salaryRanges } from "../../constants/filtersData";
 import { BsSearch } from "react-icons/bs";
-import apiConst from "../../constants/apiConst";
-import { runInAction } from "mobx";
-import { useEffect } from "react";
-import { observer } from "mobx-react";
+import { useState } from "react";
 import "./index.css";
 import FailureView from "../../components/FailureView";
 import Header from "../../components/Header";
 import JobItem from "../../components/JobItem";
 import { useMachine } from "@xstate/react";
 import { jobsMachine } from "../../xstate-machines/jobsMachine";
+import { apiStatus } from "../../constants/xstateConstants";
+import { JobType } from "../../stores/Models/Job/types";
 
 const Jobs = () => {
-  const { jobStore } = useStores();
   const [jobsState, send] = useMachine(jobsMachine);
+  const [searchKey, setSearchKey] = useState("");
 
-  useEffect(() => {
-    jobStore.getProfileData();
-  }, []);
-
-  useEffect(() => {
-    jobStore.getJobsData();
-  }, [jobStore.salaryRange, jobStore.selectedEmpTypes.length]);
-
-  const changeSearchInput = (e: any) => {
-    runInAction(() => {
-      jobStore.searchKey = e.target.value;
-    });
-  };
-
-  const onChangeSalaryRange = (e: any) => {
-    runInAction(() => {
-      jobStore.salaryRange = e.target.value;
-    });
+  const onChangeSalaryRange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    send({ type: "CHANGE_SALARY_RANGE", data: e.target.value.toString() });
   };
 
   const renderJobTypeFilters = () => {
@@ -47,7 +29,7 @@ const Jobs = () => {
               type="checkbox"
               id={item.employmentTypeId}
               onChange={(e: any) =>
-                jobStore.addOrRemoveJobTypeFilters(e.target.id)
+                send({ type: "CHANGE_EMP_TYPES", data: e.target.id })
               }
             />
             <label htmlFor={item.employmentTypeId}>{item.label}</label>
@@ -83,19 +65,20 @@ const Jobs = () => {
   );
 
   const renderSearchBar = () => {
-    const { searchKey } = jobStore;
     return (
       <div className="search-bar-container">
         <input
           type="search"
           value={searchKey}
           placeholder="Search"
-          onChange={changeSearchInput}
+          onChange={(e) => setSearchKey(e.target.value)}
           className="search-input"
         />
         <button
           type="button"
-          onClick={jobStore.getJobsData}
+          onClick={() => {
+            send({ type: "SUBMIT_SEARCH_KEY", data: searchKey });
+          }}
           className="search-btn"
         >
           <BsSearch className="search-icon" color="#ffffff" size="20" />
@@ -105,11 +88,11 @@ const Jobs = () => {
   };
 
   const renderJobResultsView = () => {
-    const { jobsData } = jobStore;
+    const { jobsData } = jobsState.context;
     if (jobsData.length > 0)
       return (
         <ul className="job-cards-container">
-          {jobsData.map((item: any) => (
+          {jobsData.map((item: JobType) => (
             <JobItem key={item.id} details={item} />
           ))}
         </ul>
@@ -128,57 +111,52 @@ const Jobs = () => {
   };
 
   const renderResultsViewBasedOnApiStatus = () => {
-    const { jobsApiStatus } = jobStore;
+    const matchesJobsApiStatus = (givenState: string) =>
+      jobsState.matches({ jobs: givenState });
 
-    switch (jobsApiStatus) {
-      case apiConst.success:
-        return renderJobResultsView();
-      case apiConst.failure:
-        return <FailureView retryMethod={jobStore.getJobsData} />;
-      case apiConst.inProgress:
-        return <div className="loader-view-wrapper">{renderLoadingView()}</div>;
-      default:
-        return null;
-    }
+    if (matchesJobsApiStatus(apiStatus.success)) return renderJobResultsView();
+    if (matchesJobsApiStatus(apiStatus.failure))
+      return <FailureView retryMethod={() => send("RETRY_JOBS_API")} />;
+    if (matchesJobsApiStatus(apiStatus.loading))
+      return <div className="loader-view-wrapper">{renderLoadingView()}</div>;
   };
 
   const renderProfileCard = () => {
-    const { profileData, profileApiStatus } = jobStore;
+    const { profileData } = jobsState.context;
 
-    switch (profileApiStatus) {
-      case apiConst.success:
-        return (
-          <div className="profile-card-wrapper">
-            <div className="profile-card-container">
-              <img
-                src={profileData?.profileImgUrl}
-                alt="profile"
-                className="profile-img"
-              />
-              <h1 className="profile-heading">{profileData?.name}</h1>
-              <p className="profile-text">{profileData?.shortBio}</p>
-            </div>
+    const matchesProfileState = (givenState: string) =>
+      jobsState.matches({ profile: givenState });
+
+    if (matchesProfileState(apiStatus.success))
+      return (
+        <div className="profile-card-wrapper">
+          <div className="profile-card-container">
+            <img
+              src={profileData?.profile_image_url}
+              alt="profile"
+              className="profile-img"
+            />
+            <h1 className="profile-heading">{profileData?.name}</h1>
+            <p className="profile-text">{profileData?.short_bio}</p>
           </div>
-        );
-      case apiConst.failure:
-        return (
-          <div className="profile-card-wrapper">
-            <button
-              type="button"
-              className="retry-btn"
-              onClick={jobStore.getProfileData}
-            >
-              Retry
-            </button>
-          </div>
-        );
-      case apiConst.inProgress:
-        return (
-          <div className="profile-card-wrapper">{renderLoadingView()}</div>
-        );
-      default:
-        return null;
-    }
+        </div>
+      );
+    if (matchesProfileState(apiStatus.failure))
+      return (
+        <div className="profile-card-wrapper">
+          <button
+            type="button"
+            className="retry-btn"
+            onClick={() => {
+              send({ type: "RETRY_PROFILE_API" });
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      );
+    if (matchesProfileState(apiStatus.loading))
+      return <div className="profile-card-wrapper">{renderLoadingView()}</div>;
   };
 
   const renderProfileAndFiltersContainer = () => (
@@ -213,4 +191,4 @@ const Jobs = () => {
   );
 };
 
-export default observer(Jobs);
+export default Jobs;

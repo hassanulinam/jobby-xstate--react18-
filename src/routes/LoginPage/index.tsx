@@ -1,5 +1,4 @@
 import { useMachine } from "@xstate/react";
-import { observer } from "mobx-react";
 import { useEffect, useState } from "react";
 import { Redirect, useHistory } from "react-router-dom";
 import { getAccessToken } from "../../utils/accessToken";
@@ -10,10 +9,8 @@ const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [authState, send] = useMachine(authMachine);
-
   const history = useHistory();
 
-  console.log(authState);
   useEffect(() => {
     if (authState.value === "loginSuccess") {
       history.push("/");
@@ -26,7 +23,6 @@ const Login = () => {
   const onPasswordChange = (e: any) => {
     setPassword(e.target.value);
   };
-
   const onLogin = (e: any) => {
     e.preventDefault();
     send({ type: "SUBMIT", formData: { username, password } });
@@ -74,4 +70,4 @@ const Login = () => {
   return <div className="login-route-container">{renderForm()}</div>;
 };
 
-export default observer(Login);
+export default Login;
